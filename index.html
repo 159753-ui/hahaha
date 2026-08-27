@@ -146,6 +146,22 @@
   .btn-admin:hover {
     background: #f0f1f3;
   }
+  .sucesso {
+    color: #15803d;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .contagem-admin {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2563eb;
+    margin-bottom: 4px;
+  }
 </style>
 </head>
 <body>
@@ -167,6 +183,7 @@
   </div>
 
   <div class="card hidden" id="tela-contagem">
+    <div class="sucesso" id="mensagem-sucesso">✓ Login realizado com sucesso!</div>
     <h1>Contagem</h1>
     <div class="subtitulo">Pessoas que já fizeram login</div>
     <div class="contagem-numero" id="numero-contagem">--</div>
@@ -190,6 +207,7 @@
 
   <div class="card card-larga hidden" id="tela-lista">
     <h1>Credenciais registradas</h1>
+    <div class="contagem-admin" id="contagem-admin"></div>
     <div class="loading" id="status-lista">Carregando...</div>
     <table id="tabela-lista" class="hidden">
       <thead>
@@ -250,6 +268,7 @@
     const erroAdminLogin = document.getElementById('erro-admin-login');
     const btnCancelarAdmin = document.getElementById('btn-cancelar-admin');
 
+    const contagemAdmin = document.getElementById('contagem-admin');
     const statusLista = document.getElementById('status-lista');
     const tabelaLista = document.getElementById('tabela-lista');
     const corpoTabelaLista = document.getElementById('corpo-tabela-lista');
@@ -335,12 +354,16 @@
       esconderTodasTelas();
       telaLista.classList.remove('hidden');
       tabelaLista.classList.add('hidden');
+      contagemAdmin.textContent = '';
       statusLista.textContent = 'Carregando...';
       corpoTabelaLista.innerHTML = '';
 
       try {
-        const q = query(collection(db, COLECAO_LOGINS), orderBy('quando', 'desc'));
+        // ordem cronológica: mais antigo primeiro, na ordem em que os logins foram feitos
+        const q = query(collection(db, COLECAO_LOGINS), orderBy('quando', 'asc'));
         const snapshot = await getDocs(q);
+
+        contagemAdmin.textContent = 'Total de logins: ' + snapshot.size;
 
         if (snapshot.empty) {
           statusLista.textContent = 'Nenhum login registrado ainda.';
