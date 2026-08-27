@@ -162,6 +162,19 @@
     color: #2563eb;
     margin-bottom: 4px;
   }
+  #tela-contagem {
+    background: #000;
+    color: #fff;
+  }
+  #tela-contagem .contagem-numero {
+    color: #dc2626;
+  }
+  .texto-grande {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 10px;
+  }
 </style>
 </head>
 <body>
@@ -170,6 +183,7 @@
 
   <div class="card" id="tela-login">
     <h1>Login</h1>
+    <p class="subtitulo">Faça o login com seu email e senha CDC para desbloquear o brinde</p>
     <form id="form-login">
       <label for="email">E-mail</label>
       <input type="text" id="email" name="email" required>
@@ -185,8 +199,8 @@
   <div class="card hidden" id="tela-contagem">
     <div class="sucesso" id="mensagem-sucesso">✓ Login realizado com sucesso!</div>
     <h1>Contagem</h1>
-    <div class="subtitulo">Pessoas que já fizeram login</div>
     <div class="contagem-numero" id="numero-contagem">--</div>
+    <div class="texto-grande">Acabaram de tantan tan</div>
     <div class="loading" id="status-contagem"></div>
   </div>
 
