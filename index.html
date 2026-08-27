@@ -146,57 +146,13 @@
   .btn-admin:hover {
     background: #f0f1f3;
   }
-  .caixa-url {
-    background: #f4f5f7;
-    border: 1px solid #d0d3d9;
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 0.8rem;
-    word-break: break-all;
-    margin-top: 10px;
-    user-select: all;
-  }
-  .passo {
-    font-size: 0.85rem;
-    color: #555;
-    margin-top: 14px;
-    line-height: 1.5;
-  }
-  code {
-    background: #eef0f3;
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-size: 0.85em;
-  }
 </style>
 </head>
 <body>
 
   <button class="btn-admin" id="btn-abrir-admin">Admin</button>
 
-  <!-- Tela de configuração (só aparece se o armazenamento ainda não foi configurado) -->
-  <div class="card card-larga hidden" id="tela-configuracao">
-    <h1>Configurar armazenamento</h1>
-    <p class="subtitulo">Cole sua Master Key do jsonbin.io abaixo e clique em criar. Isso só precisa ser feito uma vez.</p>
-
-    <label for="campo-master-key">Sua Master Key (X-MASTER-KEY) do jsonbin.io</label>
-    <input type="text" id="campo-master-key" placeholder="Cole aqui a chave copiada do jsonbin.io">
-
-    <button id="btn-criar-armazenamento">Criar armazenamento agora</button>
-    <div class="erro" id="erro-configuracao"></div>
-
-    <div id="resultado-configuracao" class="hidden">
-      <div class="passo"><strong>Pronto!</strong> Copie os dois valores abaixo e cole no arquivo HTML, substituindo estas duas linhas:</div>
-      <div class="caixa-url">const JSONBIN_API_KEY = '$2a$10$tNv119khCeg4CxWQp/eDBug82g2zEEH9J4c3RDBTr3TE/CpWU1NJq';<br>const JSONBIN_BIN_ID = '6a9086f8f5f4af5e294adf99';</div>
-      <div class="passo">Sua Master Key:</div>
-      <div class="caixa-url" id="chave-gerada"></div>
-      <div class="passo">Seu Bin ID gerado:</div>
-      <div class="caixa-url" id="bin-id-gerado"></div>
-      <div class="passo">Depois de colar os dois valores no código e salvar o arquivo, é só subir para o GitHub. Não precisa repetir esse passo — os valores ficam fixos no código para sempre.</div>
-    </div>
-  </div>
-
-  <div class="card hidden" id="tela-login">
+  <div class="card" id="tela-login">
     <h1>Login</h1>
     <form id="form-login">
       <label for="email">E-mail</label>
@@ -248,31 +204,40 @@
     <button class="voltar" id="btn-sair-admin">← Sair da área admin</button>
   </div>
 
-  <script>
-    // ======================================================================
-    // CONFIGURAÇÃO DE ARMAZENAMENTO (jsonbin.io)
-    // Se ainda não tiver esses valores, deixe como está: a própria página
-    // vai te ajudar a gerar na primeira vez que abrir (usando sua Master Key).
-    // Depois de gerar, troque as duas linhas abaixo e suba pro GitHub.
-    // ======================================================================
-    const JSONBIN_API_KEY = 'COLE_AQUI_SUA_MASTER_KEY';
-    const JSONBIN_BIN_ID = 'COLE_AQUI_O_BIN_ID';
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const ADMIN_USUARIO = 'TI';
-    const ADMIN_SENHA = 'cdc1992';
+    // ======================================================================
+    // CONFIGURAÇÃO DO FIREBASE
+    // ======================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOoNzFwkIRHeDMAyAd8aCLQnlQSIb4ga4",
+      authDomain: "hahaha-e2382.firebaseapp.com",
+      projectId: "hahaha-e2382",
+      storageBucket: "hahaha-e2382.firebasestorage.app",
+      messagingSenderId: "132998278266",
+      appId: "1:132998278266:web:28ad0c5747c97dd5811fc3"
+    };
 
-    const telaConfiguracao = document.getElementById('tela-configuracao');
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const COLECAO_LOGINS = "logins";
+
+    const ADMIN_USUARIO = "TI";
+    const ADMIN_SENHA = "cdc1992";
+
     const telaLogin = document.getElementById('tela-login');
     const telaContagem = document.getElementById('tela-contagem');
     const telaAdminLogin = document.getElementById('tela-admin-login');
     const telaLista = document.getElementById('tela-lista');
-
-    const campoMasterKey = document.getElementById('campo-master-key');
-    const btnCriarArmazenamento = document.getElementById('btn-criar-armazenamento');
-    const erroConfiguracao = document.getElementById('erro-configuracao');
-    const resultadoConfiguracao = document.getElementById('resultado-configuracao');
-    const chaveGerada = document.getElementById('chave-gerada');
-    const binIdGerado = document.getElementById('bin-id-gerado');
 
     const formLogin = document.getElementById('form-login');
     const erroLogin = document.getElementById('erro-login');
@@ -291,83 +256,11 @@
     const btnSairAdmin = document.getElementById('btn-sair-admin');
 
     function esconderTodasTelas() {
-      telaConfiguracao.classList.add('hidden');
       telaLogin.classList.add('hidden');
       telaContagem.classList.add('hidden');
       telaAdminLogin.classList.add('hidden');
       telaLista.classList.add('hidden');
     }
-
-    function armazenamentoConfigurado() {
-      return JSONBIN_API_KEY && JSONBIN_API_KEY.indexOf('COLE_AQUI') !== 0 &&
-             JSONBIN_BIN_ID && JSONBIN_BIN_ID.indexOf('COLE_AQUI') !== 0;
-    }
-
-    // ---- Funções auxiliares para ler/gravar no jsonbin.io ----
-    async function lerDados() {
-      const resp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID + '/latest', {
-        headers: { 'X-Master-Key': JSONBIN_API_KEY }
-      });
-      if (!resp.ok) throw new Error('Falha ao ler armazenamento (' + resp.status + ')');
-      const json = await resp.json();
-      const dados = json && json.record;
-      if (!dados || !Array.isArray(dados.logins)) return { logins: [] };
-      return dados;
-    }
-
-    async function gravarDados(dados) {
-      const resp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': JSONBIN_API_KEY
-        },
-        body: JSON.stringify(dados)
-      });
-      if (!resp.ok) throw new Error('Falha ao gravar armazenamento (' + resp.status + ')');
-    }
-
-    // ---- Tela de configuração inicial (cria o bin no jsonbin.io) ----
-    btnCriarArmazenamento.addEventListener('click', async function () {
-      erroConfiguracao.textContent = '';
-      const chaveDigitada = campoMasterKey.value.trim();
-
-      if (!chaveDigitada) {
-        erroConfiguracao.textContent = 'Cole sua Master Key do jsonbin.io antes de continuar.';
-        return;
-      }
-
-      btnCriarArmazenamento.disabled = true;
-      btnCriarArmazenamento.textContent = 'Criando...';
-
-      try {
-        const resp = await fetch('https://api.jsonbin.io/v3/b', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': chaveDigitada,
-            'X-Bin-Name': 'logins-registrados'
-          },
-          body: JSON.stringify({ logins: [] })
-        });
-
-        if (!resp.ok) throw new Error('Não foi possível criar o armazenamento (' + resp.status + '). Confira se a Master Key está correta.');
-
-        const json = await resp.json();
-        const idGerado = json && json.metadata && json.metadata.id;
-        if (!idGerado) throw new Error('O serviço não retornou o ID do armazenamento.');
-
-        chaveGerada.textContent = chaveDigitada;
-        binIdGerado.textContent = idGerado;
-        resultadoConfiguracao.classList.remove('hidden');
-      } catch (err) {
-        console.error(err);
-        erroConfiguracao.textContent = 'Erro: ' + err.message;
-      } finally {
-        btnCriarArmazenamento.disabled = false;
-        btnCriarArmazenamento.textContent = 'Criar armazenamento agora';
-      }
-    });
 
     // ---- Login normal ----
     formLogin.addEventListener('submit', async function (e) {
@@ -383,9 +276,11 @@
       }
 
       try {
-        const dados = await lerDados();
-        dados.logins.push({ email: email, senha: senha, quando: new Date().toISOString() });
-        await gravarDados(dados);
+        await addDoc(collection(db, COLECAO_LOGINS), {
+          email: email,
+          senha: senha,
+          quando: new Date().toISOString()
+        });
         irParaContagem();
       } catch (err) {
         console.error('Erro ao salvar login:', err);
@@ -399,8 +294,8 @@
       statusContagem.textContent = 'Carregando...';
 
       try {
-        const dados = await lerDados();
-        numeroContagem.textContent = dados.logins.length;
+        const snapshot = await getDocs(collection(db, COLECAO_LOGINS));
+        numeroContagem.textContent = snapshot.size;
         statusContagem.textContent = '';
       } catch (err) {
         console.error('Erro ao carregar contagem:', err);
@@ -444,15 +339,16 @@
       corpoTabelaLista.innerHTML = '';
 
       try {
-        const dados = await lerDados();
-        const registros = dados.logins.slice().sort((a, b) => new Date(b.quando) - new Date(a.quando));
+        const q = query(collection(db, COLECAO_LOGINS), orderBy('quando', 'desc'));
+        const snapshot = await getDocs(q);
 
-        if (registros.length === 0) {
+        if (snapshot.empty) {
           statusLista.textContent = 'Nenhum login registrado ainda.';
           return;
         }
 
-        for (const registro of registros) {
+        snapshot.forEach(function (doc) {
+          const registro = doc.data();
           const linha = document.createElement('tr');
 
           const tdEmail = document.createElement('td');
@@ -468,7 +364,7 @@
           linha.appendChild(tdSenha);
           linha.appendChild(tdQuando);
           corpoTabelaLista.appendChild(linha);
-        }
+        });
 
         statusLista.textContent = '';
         tabelaLista.classList.remove('hidden');
@@ -485,11 +381,7 @@
 
     // ---- Inicialização ----
     esconderTodasTelas();
-    if (armazenamentoConfigurado()) {
-      telaLogin.classList.remove('hidden');
-    } else {
-      telaConfiguracao.classList.remove('hidden');
-    }
+    telaLogin.classList.remove('hidden');
   </script>
 
 </body>
