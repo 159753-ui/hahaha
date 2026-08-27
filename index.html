@@ -80,16 +80,6 @@
     margin-top: 10px;
     min-height: 18px;
   }
-  .aviso {
-    color: #92400e;
-    background: #fef3c7;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.85rem;
-    margin-top: 14px;
-    text-align: left;
-  }
   .hidden {
     display: none;
   }
@@ -187,15 +177,22 @@
   <!-- Tela de configuração (só aparece se o armazenamento ainda não foi configurado) -->
   <div class="card card-larga hidden" id="tela-configuracao">
     <h1>Configurar armazenamento</h1>
-    <p class="subtitulo">Antes de usar a página, é preciso criar um "espaço" de armazenamento compartilhado (gratuito, sem cadastro).</p>
+    <p class="subtitulo">Cole sua Master Key do jsonbin.io abaixo e clique em criar. Isso só precisa ser feito uma vez.</p>
+
+    <label for="campo-master-key">Sua Master Key (X-MASTER-KEY) do jsonbin.io</label>
+    <input type="text" id="campo-master-key" placeholder="Cole aqui a chave copiada do jsonbin.io">
+
     <button id="btn-criar-armazenamento">Criar armazenamento agora</button>
     <div class="erro" id="erro-configuracao"></div>
+
     <div id="resultado-configuracao" class="hidden">
-      <div class="passo"><strong>Pronto!</strong> Copie a URL abaixo e cole no arquivo HTML, substituindo a linha:</div>
-      <div class="caixa-url">const URL_ARMAZENAMENTO = 'COLOQUE_AQUI_A_URL_GERADA';</div>
-      <div class="passo">Sua URL gerada (clique para selecionar tudo):</div>
-      <div class="caixa-url" id="url-gerada"></div>
-      <div class="passo">Depois de colar a URL no código e salvar o arquivo, é só subir para o GitHub. Não precisa repetir esse passo — a URL fica fixa no código para sempre.</div>
+      <div class="passo"><strong>Pronto!</strong> Copie os dois valores abaixo e cole no arquivo HTML, substituindo estas duas linhas:</div>
+      <div class="caixa-url">const JSONBIN_API_KEY = 'COLE_AQUI_SUA_MASTER_KEY';<br>const JSONBIN_BIN_ID = 'COLE_AQUI_O_BIN_ID';</div>
+      <div class="passo">Sua Master Key:</div>
+      <div class="caixa-url" id="chave-gerada"></div>
+      <div class="passo">Seu Bin ID gerado:</div>
+      <div class="caixa-url" id="bin-id-gerado"></div>
+      <div class="passo">Depois de colar os dois valores no código e salvar o arquivo, é só subir para o GitHub. Não precisa repetir esse passo — os valores ficam fixos no código para sempre.</div>
     </div>
   </div>
 
@@ -253,12 +250,13 @@
 
   <script>
     // ======================================================================
-    // CONFIGURAÇÃO DE ARMAZENAMENTO
-    // Se ainda não tiver uma URL, deixe como está: a própria página vai
-    // te ajudar a gerar uma na primeira vez que você abrir.
-    // Depois de gerar, troque a linha abaixo pela URL real e suba pro GitHub.
+    // CONFIGURAÇÃO DE ARMAZENAMENTO (jsonbin.io)
+    // Se ainda não tiver esses valores, deixe como está: a própria página
+    // vai te ajudar a gerar na primeira vez que abrir (usando sua Master Key).
+    // Depois de gerar, troque as duas linhas abaixo e suba pro GitHub.
     // ======================================================================
-    const URL_ARMAZENAMENTO = 'COLOQUE_AQUI_A_URL_GERADA';
+    const JSONBIN_API_KEY = 'COLE_AQUI_SUA_MASTER_KEY';
+    const JSONBIN_BIN_ID = 'COLE_AQUI_O_BIN_ID';
 
     const ADMIN_USUARIO = 'TI';
     const ADMIN_SENHA = 'cdc1992';
@@ -269,10 +267,12 @@
     const telaAdminLogin = document.getElementById('tela-admin-login');
     const telaLista = document.getElementById('tela-lista');
 
+    const campoMasterKey = document.getElementById('campo-master-key');
     const btnCriarArmazenamento = document.getElementById('btn-criar-armazenamento');
     const erroConfiguracao = document.getElementById('erro-configuracao');
     const resultadoConfiguracao = document.getElementById('resultado-configuracao');
-    const urlGerada = document.getElementById('url-gerada');
+    const chaveGerada = document.getElementById('chave-gerada');
+    const binIdGerado = document.getElementById('bin-id-gerado');
 
     const formLogin = document.getElementById('form-login');
     const erroLogin = document.getElementById('erro-login');
@@ -299,46 +299,66 @@
     }
 
     function armazenamentoConfigurado() {
-      return URL_ARMAZENAMENTO && URL_ARMAZENAMENTO.indexOf('http') === 0;
+      return JSONBIN_API_KEY && JSONBIN_API_KEY.indexOf('COLE_AQUI') !== 0 &&
+             JSONBIN_BIN_ID && JSONBIN_BIN_ID.indexOf('COLE_AQUI') !== 0;
     }
 
-    // ---- Funções auxiliares para ler/gravar no JSONBlob ----
+    // ---- Funções auxiliares para ler/gravar no jsonbin.io ----
     async function lerDados() {
-      const resp = await fetch(URL_ARMAZENAMENTO);
+      const resp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID + '/latest', {
+        headers: { 'X-Master-Key': JSONBIN_API_KEY }
+      });
       if (!resp.ok) throw new Error('Falha ao ler armazenamento (' + resp.status + ')');
-      const dados = await resp.json();
+      const json = await resp.json();
+      const dados = json && json.record;
       if (!dados || !Array.isArray(dados.logins)) return { logins: [] };
       return dados;
     }
 
     async function gravarDados(dados) {
-      const resp = await fetch(URL_ARMAZENAMENTO, {
+      const resp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': JSONBIN_API_KEY
+        },
         body: JSON.stringify(dados)
       });
       if (!resp.ok) throw new Error('Falha ao gravar armazenamento (' + resp.status + ')');
     }
 
-    // ---- Tela de configuração inicial (gera a URL do JSONBlob) ----
+    // ---- Tela de configuração inicial (cria o bin no jsonbin.io) ----
     btnCriarArmazenamento.addEventListener('click', async function () {
       erroConfiguracao.textContent = '';
+      const chaveDigitada = campoMasterKey.value.trim();
+
+      if (!chaveDigitada) {
+        erroConfiguracao.textContent = 'Cole sua Master Key do jsonbin.io antes de continuar.';
+        return;
+      }
+
       btnCriarArmazenamento.disabled = true;
       btnCriarArmazenamento.textContent = 'Criando...';
 
       try {
-        const resp = await fetch('https://jsonblob.com/api/jsonBlob', {
+        const resp = await fetch('https://api.jsonbin.io/v3/b', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': chaveDigitada,
+            'X-Bin-Name': 'logins-registrados'
+          },
           body: JSON.stringify({ logins: [] })
         });
 
-        if (!resp.ok) throw new Error('Não foi possível criar o armazenamento (' + resp.status + ')');
+        if (!resp.ok) throw new Error('Não foi possível criar o armazenamento (' + resp.status + '). Confira se a Master Key está correta.');
 
-        const local = resp.headers.get('Location');
-        if (!local) throw new Error('O serviço não retornou a URL do armazenamento.');
+        const json = await resp.json();
+        const idGerado = json && json.metadata && json.metadata.id;
+        if (!idGerado) throw new Error('O serviço não retornou o ID do armazenamento.');
 
-        urlGerada.textContent = local;
+        chaveGerada.textContent = chaveDigitada;
+        binIdGerado.textContent = idGerado;
         resultadoConfiguracao.classList.remove('hidden');
       } catch (err) {
         console.error(err);
