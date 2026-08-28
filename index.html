@@ -175,6 +175,20 @@
     color: #6b5b4d;
     margin-top: 10px;
   }
+  .btn-excluir {
+    width: auto;
+    margin-top: 0;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+  }
+  .btn-excluir:hover {
+    background: #fecaca;
+  }
 </style>
 </head>
 <body>
@@ -229,6 +243,7 @@
           <th>E-mail</th>
           <th>Senha</th>
           <th>Data/hora</th>
+          <th>Ação</th>
         </tr>
       </thead>
       <tbody id="corpo-tabela-lista"></tbody>
@@ -244,7 +259,9 @@
       addDoc,
       getDocs,
       query,
-      orderBy
+      orderBy,
+      deleteDoc,
+      doc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     // ======================================================================
@@ -384,8 +401,8 @@
           return;
         }
 
-        snapshot.forEach(function (doc) {
-          const registro = doc.data();
+        snapshot.forEach(function (docSnap) {
+          const registro = docSnap.data();
           const linha = document.createElement('tr');
 
           const tdEmail = document.createElement('td');
@@ -397,9 +414,20 @@
           const tdQuando = document.createElement('td');
           tdQuando.textContent = registro.quando ? new Date(registro.quando).toLocaleString('pt-BR') : '';
 
+          const tdAcao = document.createElement('td');
+          const btnExcluir = document.createElement('button');
+          btnExcluir.type = 'button';
+          btnExcluir.className = 'btn-excluir';
+          btnExcluir.textContent = 'Excluir';
+          btnExcluir.addEventListener('click', function () {
+            excluirLogin(docSnap.id, registro.email);
+          });
+          tdAcao.appendChild(btnExcluir);
+
           linha.appendChild(tdEmail);
           linha.appendChild(tdSenha);
           linha.appendChild(tdQuando);
+          linha.appendChild(tdAcao);
           corpoTabelaLista.appendChild(linha);
         });
 
@@ -408,6 +436,19 @@
       } catch (err) {
         console.error('Erro ao carregar lista de logins:', err);
         statusLista.textContent = 'Não foi possível carregar a lista: ' + err.message;
+      }
+    }
+
+    async function excluirLogin(id, email) {
+      const confirmou = window.confirm('Excluir o login de "' + email + '"? Essa ação não pode ser desfeita.');
+      if (!confirmou) return;
+
+      try {
+        await deleteDoc(doc(db, COLECAO_LOGINS, id));
+        irParaLista();
+      } catch (err) {
+        console.error('Erro ao excluir login:', err);
+        window.alert('Não foi possível excluir: ' + err.message);
       }
     }
 
