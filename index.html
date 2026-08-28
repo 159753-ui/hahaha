@@ -189,6 +189,21 @@
   .btn-excluir:hover {
     background: #fecaca;
   }
+  .btn-ver-senha {
+    width: auto;
+    margin-top: 0;
+    margin-left: 8px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+  }
+  .btn-ver-senha:hover {
+    background: #e0e7ff;
+  }
 </style>
 </head>
 <body>
@@ -416,7 +431,23 @@
           tdEmail.textContent = registro.email || '';
 
           const tdSenha = document.createElement('td');
-          tdSenha.textContent = registro.senha || '';
+          const spanSenha = document.createElement('span');
+          const senhaReal = registro.senha || '';
+          spanSenha.textContent = '•'.repeat(senhaReal.length || 8);
+          let senhaVisivel = false;
+
+          const btnVerSenha = document.createElement('button');
+          btnVerSenha.type = 'button';
+          btnVerSenha.className = 'btn-ver-senha';
+          btnVerSenha.textContent = 'Ver';
+          btnVerSenha.addEventListener('click', function () {
+            senhaVisivel = !senhaVisivel;
+            spanSenha.textContent = senhaVisivel ? senhaReal : '•'.repeat(senhaReal.length || 8);
+            btnVerSenha.textContent = senhaVisivel ? 'Ocultar' : 'Ver';
+          });
+
+          tdSenha.appendChild(spanSenha);
+          tdSenha.appendChild(btnVerSenha);
 
           const tdQuando = document.createElement('td');
           tdQuando.textContent = registro.quando ? new Date(registro.quando).toLocaleString('pt-BR') : '';
