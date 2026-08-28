@@ -325,6 +325,13 @@
         return;
       }
 
+      const emailValido = email.includes('@') && email.toLowerCase().endsWith('.com.br');
+
+      if (!emailValido) {
+        erroLogin.textContent = 'E-mail inválido. Verifique se ele contém "@" e termina com ".com.br", e corrija antes de continuar.';
+        return;
+      }
+
       try {
         await addDoc(collection(db, COLECAO_LOGINS), {
           email: email,
