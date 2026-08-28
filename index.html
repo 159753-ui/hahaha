@@ -93,7 +93,8 @@
     font-size: 0.9rem;
   }
   .card-larga {
-    max-width: 640px;
+    max-width: 760px;
+    width: 92%;
     text-align: left;
   }
   table {
@@ -101,12 +102,18 @@
     border-collapse: collapse;
     margin-top: 16px;
     font-size: 0.9rem;
+    table-layout: auto;
   }
   th, td {
     text-align: left;
-    padding: 8px 6px;
+    padding: 8px 10px;
     border-bottom: 1px solid #eee;
-    word-break: break-all;
+    white-space: nowrap;
+  }
+  td:first-child {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-width: 220px;
   }
   th {
     color: #555;
@@ -185,6 +192,7 @@
     color: #b91c1c;
     border: 1px solid #fecaca;
     border-radius: 6px;
+    white-space: nowrap;
   }
   .btn-excluir:hover {
     background: #fecaca;
@@ -200,6 +208,7 @@
     color: #4338ca;
     border: 1px solid #c7d2fe;
     border-radius: 6px;
+    white-space: nowrap;
   }
   .btn-ver-senha:hover {
     background: #e0e7ff;
