@@ -110,16 +110,15 @@
     border-bottom: 1px solid #eee;
     white-space: nowrap;
   }
-  td:first-child {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    max-width: 220px;
-  }
   th {
     color: #555;
     font-weight: 600;
     font-size: 0.8rem;
     text-transform: uppercase;
+  }
+  .tabela-scroll {
+    overflow-x: auto;
+    max-width: 100%;
   }
   .voltar {
     display: inline-block;
@@ -261,6 +260,7 @@
     <h1>Credenciais registradas</h1>
     <div class="contagem-admin" id="contagem-admin"></div>
     <div class="loading" id="status-lista">Carregando...</div>
+    <div class="tabela-scroll">
     <table id="tabela-lista" class="hidden">
       <thead>
         <tr>
@@ -272,6 +272,7 @@
       </thead>
       <tbody id="corpo-tabela-lista"></tbody>
     </table>
+    </div>
     <button class="voltar" id="btn-sair-admin">← Sair da área admin</button>
   </div>
 
